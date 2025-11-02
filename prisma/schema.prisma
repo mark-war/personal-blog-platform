@@ -1,0 +1,84 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  password      String
+  image         String?
+  bio           String?
+  role          Role      @default(USER)
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  posts         Post[]
+  comments      Comment[]
+  
+  @@map("users")
+}
+
+model Post {
+  id          String    @id @default(cuid())
+  title       String
+  slug        String    @unique
+  content     String
+  excerpt     String?
+  coverImage  String?
+  published   Boolean   @default(false)
+  featured    Boolean   @default(false)
+  views       Int       @default(0)
+  authorId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  publishedAt DateTime?
+  
+  author      User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  comments    Comment[]
+  tags        Tag[]
+  
+  @@index([slug])
+  @@index([authorId])
+  @@index([published])
+  @@map("posts")
+}
+
+model Comment {
+  id        String   @id @default(cuid())
+  content   String
+  postId    String
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  
+  @@index([postId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  posts     Post[]
+  createdAt DateTime @default(now())
+  
+  @@map("tags")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
